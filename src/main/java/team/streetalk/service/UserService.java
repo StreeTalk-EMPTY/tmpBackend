@@ -17,8 +17,7 @@ import team.streetalk.jwt.JwtTokenProvider;
 import team.streetalk.repository.UserRepository;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.util.Comparator;
+import java.util.Random;
 
 
 @Service
@@ -34,7 +33,7 @@ public class UserService {
     @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
         LoginResponse loginResponse = new LoginResponse();
-        User existUser = userRepository.findByPhoneNum(loginRequest.getPhoneNum())
+        User existUser = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseGet(()->signup(loginRequest));
         try{
             loginResponse.setToken(doGenerateToken(loginRequest));
@@ -47,21 +46,37 @@ public class UserService {
     @Transactional
     public User signup(LoginRequest loginRequest) {
         User user = new User();
-        user.setPhoneNum(loginRequest.getPhoneNum());
+        System.out.println(loginRequest.getEmail());
+        user.setEmail(loginRequest.getEmail());
         user.setPassword(passwordEncoder.encode(loginRequest.getPassword())); //id = email, pwd = loginId
         userRepository.save(user);
+        System.out.println("user build!");
         return user;
     }
 
+    public String getAuthCode() {
+        Random random = new Random();
+        StringBuffer buffer = new StringBuffer();
+        int num = 0;
+        num = random.nextInt(8) + 1;
+        buffer.append(num);
+        while (buffer.length() < 6) {
+            num = random.nextInt(10);
+            buffer.append(num);
+        }
+        return buffer.toString();
+    }
+
+
     public String doGenerateToken(LoginRequest loginRequest) {
         Authentication authenticate = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getPhoneNum(), loginRequest.getPassword()));
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authenticate);
         return jwtTokenProvider.createToken(authenticate);
     }
 
     public User getCurrentUser(HttpServletRequest req) {
-        return userRepository.findByPhoneNum(jwtTokenProvider.getPhoneNumFromToken(jwtTokenProvider.resolveToken(req)))
+        return userRepository.findByEmail(jwtTokenProvider.getEmailFromToken(jwtTokenProvider.resolveToken(req)))
                 .orElseThrow(() -> new RuntimeException("can't find who am i"));
     }
 

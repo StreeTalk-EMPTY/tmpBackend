@@ -15,7 +15,7 @@ import java.util.Collection;
 public class CustomUserDetails implements UserDetails {
 
     private Long id;
-    private Integer phoneNum;
+    private String email;
     private String password;
     private boolean enabled;
 
@@ -23,7 +23,7 @@ public class CustomUserDetails implements UserDetails {
     public static CustomUserDetails build(User user){
         return new CustomUserDetails(
                 user.getId(),
-                user.getPhoneNum(),
+                user.getEmail(),
                 user.getPassword(),
                 true
         );
@@ -42,12 +42,9 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return phoneNum.toString();
+        return email;
     }
 
-    public Integer getPhoneNum(){
-        return phoneNum;
-    }
     @Override
     public boolean isAccountNonExpired() {
         return true;

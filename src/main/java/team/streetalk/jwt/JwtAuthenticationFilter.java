@@ -25,41 +25,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {  // * 클래
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String requestTokenHeader = request.getHeader("Authorization");
-
-        String phoneNum = null;
-        String jwtToken = null;
-
         //토큰에 헤드를 넣어 넘길때 : "Bearer "+ token 으로 만들어서 Authorization: 에 넣어 보내기
-        if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
-            jwtToken = requestTokenHeader.substring(7);
-            try {
-                phoneNum = jwtTokenProvider.getPhoneNumFromToken(jwtToken);
-            } catch (IllegalArgumentException e) {
-                System.out.println("Unable to get JWT Token");
-            }
-        } else {
-            logger.warn("JWT Token does not begin with Bearer String");
+        if(request.getHeader("Authorization") == null){
+            filterChain.doFilter(request,response);
+            return;
         }
+        String jwtToken = jwtTokenProvider.resolveToken(request);
+        String email = jwtTokenProvider.getEmailFromToken(jwtToken);
 
-
-        if(phoneNum != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            CustomUserDetails customUserDetails = customUserDetailsService.loadUserByUsername(phoneNum);
+        if(email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
             try{
-                if(jwtTokenProvider.validateToken(jwtToken, customUserDetails)) {
+                if(jwtTokenProvider.validateToken(jwtToken, userDetails)) {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            customUserDetails, null, customUserDetails.getAuthorities());
+                            userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception ex) {
                 //this is very important, since it guarantees the user is not authenticated at all
                 SecurityContextHolder.clearContext();
+                System.out.println("error in building securityContextholder");
                 return;
             }
         }
+
+        System.out.println("done filtering");
         filterChain.doFilter(request,response);
     }
+
 
 
 }

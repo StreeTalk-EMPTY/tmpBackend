@@ -20,9 +20,8 @@ public class JwtTokenProvider {
 
     @Value("${jwt.secret}")
     private String secret;
-
     @PostConstruct
-    protected void init() {
+    protected void init(){
         secret = Base64.getEncoder().encodeToString(secret.getBytes());
     }
 
@@ -38,7 +37,7 @@ public class JwtTokenProvider {
         return claimsResolver.apply(claims);
     }
 
-    public String getPhoneNumFromToken(String token) {
+    public String getEmailFromToken(String token) {
         return getClaimFromToken(token, Claims::getSubject);
     }
 
@@ -60,19 +59,26 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public Boolean validateToken(String token, CustomUserDetails customUserDetails) {
-        final String PhoneNum = getPhoneNumFromToken(token);
-        return (PhoneNum.equals(customUserDetails.getUsername())) && !isTokenExpired(token);
+    public Boolean validateToken(String token, UserDetails userDetails) {
+        final String email = getEmailFromToken(token);
+        return (email.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
-
     public String resolveToken(HttpServletRequest req) {
         String bearerToken = req.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
-        } else {
+        }else {
             throw new NullPointerException("Unable to get JWT");
         }
-
-
     }
+    //    public String getUsername(String token) {
+//        return (String) Jwts
+//                .parser()
+//                .setSigningKey(secret)
+//                .parseClaimsJws(token)
+//                .getBody()
+//                .get("name");
+//    }
+
+
 }

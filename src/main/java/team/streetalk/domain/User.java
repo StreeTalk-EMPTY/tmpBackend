@@ -19,7 +19,7 @@ public class User extends BaseTime{
     @Column(nullable = true, length = 100)
     private String password;
     @Column(nullable = false, length = 100, unique = true)
-    private String phoneNum;
+    private String email;
 
     @ManyToOne
     @JoinColumn(name = "location_id")
